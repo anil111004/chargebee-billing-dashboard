@@ -1,4 +1,5 @@
 import unittest
+from unittest.mock import patch
 
 from app import app
 
@@ -13,6 +14,17 @@ class AppTestCase(unittest.TestCase):
         data = response.get_json()
         self.assertIn("status", data)
         self.assertEqual(data["status"], "ok")
+
+    def test_cors_allows_configured_render_host(self):
+        with patch("app.ALLOWED_ORIGINS", ["chargebee-billing-dashboard.onrender.com"]):
+            response = self.app.get(
+                "/api/health",
+                headers={"Origin": "https://chargebee-billing-dashboard.onrender.com"},
+            )
+        self.assertEqual(
+            response.headers.get("Access-Control-Allow-Origin"),
+            "https://chargebee-billing-dashboard.onrender.com",
+        )
 
     def test_dashboard_route(self):
         response = self.app.get("/api/dashboard")
