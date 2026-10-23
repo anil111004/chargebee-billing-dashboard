@@ -2,6 +2,12 @@
 
 A full-stack portfolio project that combines a React frontend with a Flask backend to connect to the Chargebee test environment securely.
 
+## Live demo
+
+Open the deployed dashboard: [chargebee-billing-dashboard.onrender.com](https://chargebee-billing-dashboard.onrender.com)
+
+The demo runs with sample data. The Flask API health check is available at [chargebee-billing-api.onrender.com/api/health](https://chargebee-billing-api.onrender.com/api/health).
+
 ## Features
 - Dashboard with summary cards
 - Customer listing with pagination and search
