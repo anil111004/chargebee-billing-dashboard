@@ -1,0 +1,122 @@
+import logging
+from datetime import datetime
+
+from flask import Flask, jsonify, request
+
+from chargebee_service import ChargebeeService
+from config import ALLOWED_ORIGINS, FLASK_HOST, FLASK_PORT
+
+logging.basicConfig(level=logging.INFO)
+app = Flask(__name__)
+service = ChargebeeService()
+
+
+@app.after_request
+def add_cors_headers(response):
+    origin = request.headers.get("Origin")
+    if origin and origin in ALLOWED_ORIGINS:
+        response.headers["Access-Control-Allow-Origin"] = origin
+        response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization"
+        response.headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS"
+    return response
+
+
+@app.route("/api/health", methods=["GET", "OPTIONS"])
+def health_check():
+    if request.method == "OPTIONS":
+        return "", 200
+    return jsonify({"status": "ok", "timestamp": datetime.utcnow().isoformat() + "Z"})
+
+
+@app.route("/api/chargebee/test-connection", methods=["GET"])
+def test_connection():
+    result = service.test_connection()
+    status_code = 200 if result.get("status") == "ok" else 503
+    return jsonify(result), status_code
+
+
+@app.route("/api/dashboard", methods=["GET"])
+def dashboard():
+    try:
+        return jsonify(service.get_dashboard())
+    except Exception as exc:
+        logging.exception("Dashboard error: %s", exc)
+        return jsonify({"error": "Unable to load dashboard data."}), 500
+
+
+@app.route("/api/customers", methods=["GET"])
+def customers():
+    page = max(1, int(request.args.get("page", 1)))
+    limit = min(100, max(1, int(request.args.get("limit", 10))))
+    search = request.args.get("search", "")
+    try:
+        return jsonify(service.list_customers(page=page, limit=limit, search=search))
+    except Exception as exc:
+        logging.exception("Customer listing error: %s", exc)
+        return jsonify({"error": "Unable to load customers."}), 500
+
+
+@app.route("/api/subscriptions", methods=["GET", "POST"])
+def subscriptions():
+    if request.method == "POST":
+        payload = request.get_json(silent=True) or {}
+        if not isinstance(payload, dict):
+            return jsonify({"error": "Invalid payload."}), 400
+        try:
+            result = service.create_subscription(payload)
+            return jsonify(result), 201
+        except ValueError as exc:
+            return jsonify({"error": str(exc)}), 400
+        except Exception as exc:
+            logging.exception("Subscription creation error: %s", exc)
+            return jsonify({"error": "Unable to create subscription."}), 500
+
+    page = max(1, int(request.args.get("page", 1)))
+    limit = min(100, max(1, int(request.args.get("limit", 10))))
+    status = request.args.get("status", "all")
+    search = request.args.get("search", "")
+    try:
+        return jsonify(service.list_subscriptions(page=page, limit=limit, status=status, search=search))
+    except Exception as exc:
+        logging.exception("Subscription listing error: %s", exc)
+        return jsonify({"error": "Unable to load subscriptions."}), 500
+
+
+@app.route("/api/subscriptions/<subscription_id>", methods=["GET"])
+def subscription_detail(subscription_id):
+    try:
+        item = service.get_subscription(subscription_id)
+        if item is None:
+            return jsonify({"error": "Subscription not found."}), 404
+        return jsonify({"subscription": item})
+    except Exception as exc:
+        logging.exception("Subscription detail error: %s", exc)
+        return jsonify({"error": "Unable to load subscription details."}), 500
+
+
+@app.route("/api/invoices", methods=["GET"])
+def invoices():
+    page = max(1, int(request.args.get("page", 1)))
+    limit = min(100, max(1, int(request.args.get("limit", 10))))
+    search = request.args.get("search", "")
+    try:
+        return jsonify(service.list_invoices(page=page, limit=limit, search=search))
+    except Exception as exc:
+        logging.exception("Invoice listing error: %s", exc)
+        return jsonify({"error": "Unable to load invoices."}), 500
+
+
+@app.route("/api/invoices/<invoice_id>", methods=["GET"])
+def invoice_detail(invoice_id):
+    try:
+        item = service.get_invoice(invoice_id)
+        if item is None:
+            return jsonify({"error": "Invoice not found."}), 404
+        return jsonify({"invoice": item})
+    except Exception as exc:
+        logging.exception("Invoice detail error: %s", exc)
+        return jsonify({"error": "Unable to load invoice details."}), 500
+
+
+if __name__ == "__main__":
+    app.run(host=FLASK_HOST, port=FLASK_PORT, debug=False)

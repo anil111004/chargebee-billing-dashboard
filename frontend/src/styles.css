@@ -1,0 +1,33 @@
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5001';
+
+export async function apiGet(path, params = {}) {
+  const query = new URLSearchParams();
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== '') {
+      query.append(key, String(value));
+    }
+  });
+
+  const endpoint = query.toString() ? `${path}?${query.toString()}` : path;
+  const response = await fetch(`${API_BASE}${endpoint}`);
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error || 'Request failed.');
+  }
+  return data;
+}
+
+export async function apiPost(path, payload) {
+  const response = await fetch(`${API_BASE}${path}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(payload),
+  });
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error || 'Request failed.');
+  }
+  return data;
+}
