@@ -13,10 +13,7 @@ services:
       - key: DEMO_MODE
         value: "true"
       - key: ALLOWED_ORIGINS
-        fromService:
-          type: web
-          name: chargebee-billing-dashboard
-          property: host
+        value: https://chargebee-billing-dashboard.onrender.com
   - type: web
     name: chargebee-billing-dashboard
     runtime: static
@@ -25,7 +22,4 @@ services:
     staticPublishPath: ./dist
     envVars:
       - key: VITE_API_URL
-        fromService:
-          type: web
-          name: chargebee-billing-api
-          property: host
+        value: https://chargebee-billing-api.onrender.com
