@@ -128,8 +128,11 @@ git remote add origin https://github.com/<your-username>/chargebee-billing-dashb
 git push -u origin main
 ```
 
-## Deployment guidance
-This project is ready to be deployed to a hosting provider such as Render, Railway, or a similar service. The backend is a Flask app, and the frontend is a Vite app. To deploy, configure the same environment variables in the hosting platform and disable demo mode.
+## Deploy to Render
+
+The root `render.yaml` defines a Render Blueprint with a Flask API and a Vite static site. Connect the GitHub repository in Render and choose **New + → Blueprint**. Render builds and deploys both services, wiring the frontend API URL and backend CORS origin automatically.
+
+The deployment starts in demo mode and does not require billing credentials. To connect a Chargebee test site after deployment, add `CHARGEBEE_API_KEY` and `CHARGEBEE_SITE` as secret environment variables on the API service, then set `DEMO_MODE=false`. Never put these values in source control or in the frontend environment.
 
 ## Portfolio description
 This project demonstrates a complete full-stack billing dashboard using React, Flask, and the Chargebee API. It includes dashboard metrics, customer and subscription management, invoice handling, secure environment configuration, responsive design, and careful error handling. It is a polished portfolio project showing practical billing workflows and API integration skills.

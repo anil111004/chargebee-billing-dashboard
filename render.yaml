@@ -1,0 +1,25 @@
+services:
+  - type: web
+    name: chargebee-billing-api
+    runtime: python
+    plan: free
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app --bind 0.0.0.0:$PORT
+    healthCheckPath: /api/health
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9
+      - key: DEMO_MODE
+        value: "true"
+      - key: ALLOWED_ORIGINS
+        value: https://chargebee-billing-dashboard.onrender.com
+  - type: web
+    name: chargebee-billing-dashboard
+    runtime: static
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    staticPublishPath: ./dist
+    envVars:
+      - key: VITE_API_URL
+        value: https://chargebee-billing-api.onrender.com
